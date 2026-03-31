@@ -1,20 +1,88 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import base64
+import gzip
+import glob
 import os
 import re
+
+
+def parse_vfs_folder_map(vfs_path):
+    """Parse a HFS .vfs file and return a dict mapping username -> share folder display name."""
+    try:
+        with open(vfs_path, 'rb') as f:
+            data = f.read()
+        decompressed = gzip.decompress(data[70:])
+    except Exception:
+        return {}
+
+    strings = re.findall(rb'[\x20-\x7E]{2,}', decompressed)
+    decoded = [s.decode('ascii') for s in strings]
+
+    def is_drive_path(s):
+        return len(s) > 3 and s[1] == ':' and s[2] == chr(92)
+
+    def is_junk(s):
+        if len(s) <= 3:
+            if re.match(r'^[a-z0-9]+$', s):
+                return False
+            return True
+        return False
+
+    def is_folder_name(s):
+        if is_drive_path(s):
+            return False
+        if len(s) < 2:
+            return False
+        if not re.search(r'[A-Z]{2,}', s):
+            return False
+        return True
+
+    user_to_folder = {}
+    i = 0
+    while i < len(decoded) - 2:
+        s = decoded[i]
+        if is_drive_path(s):
+            j = i + 1
+            while j < len(decoded) and is_junk(decoded[j]):
+                j += 1
+            if j < len(decoded):
+                potential_users = decoded[j]
+                if re.match(r'^[a-z0-9;]+$', potential_users) and len(potential_users) < 100:
+                    k = j + 1
+                    while k < len(decoded) and is_junk(decoded[k]):
+                        k += 1
+                    if k < len(decoded) and is_folder_name(decoded[k]):
+                        folder_name = decoded[k]
+                        for user in potential_users.split(';'):
+                            user = user.strip()
+                            if user and user not in ('admin', 'wg', 'beats', 'slop'):
+                                if user not in user_to_folder:
+                                    user_to_folder[user] = folder_name
+        i += 1
+
+    return user_to_folder
+
+
+def find_newest_vfs(directory):
+    """Find the newest .vfs file in the given directory."""
+    vfs_files = glob.glob(os.path.join(directory, "*.vfs"))
+    if not vfs_files:
+        return None
+    return max(vfs_files, key=os.path.getmtime)
 
 
 class HFSPasswordFinder:
     def __init__(self, root):
         self.root = root
         self.root.title("HFS Name & Password Finder")
-        self.root.geometry("900x650")
-        self.root.minsize(750, 500)
+        self.root.geometry("960x650")
+        self.root.minsize(800, 500)
         self.root.configure(bg="#1e1e2e")
 
         self.ini_path = ""
-        self.accounts = []  # list of dicts: {username, password, enabled, group, no_limits, link, raw_b64}
+        self.accounts = []
+        self.folder_map = {}  # username -> share folder display name
 
         self.setup_styles()
         self.build_ui()
@@ -23,7 +91,6 @@ class HFSPasswordFinder:
         style = ttk.Style()
         style.theme_use("clam")
 
-        # Colors
         self.bg = "#1e1e2e"
         self.surface = "#2a2a3d"
         self.accent = "#7c3aed"
@@ -34,20 +101,10 @@ class HFSPasswordFinder:
         self.border = "#3f3f5a"
 
         style.configure("TFrame", background=self.bg)
-        style.configure("Surface.TFrame", background=self.surface)
         style.configure("TLabel", background=self.bg, foreground=self.text_primary, font=("Segoe UI", 10))
         style.configure("Title.TLabel", background=self.bg, foreground=self.text_primary, font=("Segoe UI", 16, "bold"))
         style.configure("Subtitle.TLabel", background=self.bg, foreground=self.text_secondary, font=("Segoe UI", 9))
-        style.configure("Surface.TLabel", background=self.surface, foreground=self.text_primary, font=("Segoe UI", 10))
-        style.configure("SurfaceBold.TLabel", background=self.surface, foreground=self.text_primary, font=("Segoe UI", 11, "bold"))
         style.configure("Count.TLabel", background=self.bg, foreground=self.accent, font=("Segoe UI", 10, "bold"))
-
-        style.configure("Accent.TButton", background=self.accent, foreground="white", font=("Segoe UI", 10, "bold"),
-                         borderwidth=0, padding=(12, 6))
-        style.map("Accent.TButton", background=[("active", self.accent_hover)])
-
-        style.configure("TEntry", fieldbackground=self.surface, foreground=self.text_primary,
-                         insertcolor=self.text_primary, borderwidth=1, padding=8)
 
         style.configure("Treeview", background=self.surface, foreground=self.text_primary,
                          fieldbackground=self.surface, borderwidth=0, font=("Segoe UI", 10), rowheight=28)
@@ -57,7 +114,6 @@ class HFSPasswordFinder:
                   foreground=[("selected", "white")])
 
     def build_ui(self):
-        # Main container
         main = ttk.Frame(self.root, padding=20)
         main.pack(fill=tk.BOTH, expand=True)
 
@@ -112,16 +168,18 @@ class HFSPasswordFinder:
         tree_frame = ttk.Frame(main)
         tree_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 12))
 
-        columns = ("username", "password", "folder", "enabled")
+        columns = ("username", "password", "share_folder", "group", "enabled")
         self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="browse")
         self.tree.heading("username", text="Username", anchor=tk.W)
         self.tree.heading("password", text="Password", anchor=tk.W)
-        self.tree.heading("folder", text="Folder / Group", anchor=tk.W)
+        self.tree.heading("share_folder", text="Share Folder", anchor=tk.W)
+        self.tree.heading("group", text="Group", anchor=tk.W)
         self.tree.heading("enabled", text="Enabled", anchor=tk.CENTER)
-        self.tree.column("username", width=180, minwidth=120)
-        self.tree.column("password", width=180, minwidth=120)
-        self.tree.column("folder", width=250, minwidth=150)
-        self.tree.column("enabled", width=80, minwidth=60, anchor=tk.CENTER)
+        self.tree.column("username", width=150, minwidth=100)
+        self.tree.column("password", width=150, minwidth=100)
+        self.tree.column("share_folder", width=250, minwidth=150)
+        self.tree.column("group", width=100, minwidth=70)
+        self.tree.column("enabled", width=70, minwidth=50, anchor=tk.CENTER)
 
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -202,7 +260,9 @@ class HFSPasswordFinder:
 
         self.ini_path = path
         self.accounts.clear()
+        self.folder_map.clear()
 
+        # Parse accounts from ini
         try:
             with open(path, "r", encoding="utf-8", errors="replace") as f:
                 for line in f:
@@ -211,14 +271,23 @@ class HFSPasswordFinder:
                         self.parse_accounts_line(line)
                         break
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to read file:\n{e}")
+            messagebox.showerror("Error", f"Failed to read ini file:\n{e}")
             return
 
-        self.status_label.config(text=f"{len(self.accounts)} accounts loaded from {os.path.basename(path)}")
+        # Find and parse newest VFS in same directory
+        ini_dir = os.path.dirname(path)
+        vfs_path = find_newest_vfs(ini_dir)
+        vfs_status = ""
+        if vfs_path:
+            self.folder_map = parse_vfs_folder_map(vfs_path)
+            vfs_status = f"  |  {len(self.folder_map)} folders from {os.path.basename(vfs_path)}"
+
+        self.status_label.config(
+            text=f"{len(self.accounts)} accounts loaded{vfs_status}"
+        )
         self.filter_accounts()
 
     def parse_accounts_line(self, line):
-        # Remove 'accounts=' prefix
         data = line[len("accounts="):]
         parts = data.split("|")
 
@@ -265,24 +334,31 @@ class HFSPasswordFinder:
             "raw_b64": b64,
         })
 
+    def get_share_folder(self, username):
+        """Get the share folder display name for a username from the VFS mapping."""
+        return self.folder_map.get(username.lower(), self.folder_map.get(username, ""))
+
     def filter_accounts(self):
         query = self.search_var.get().strip().lower()
         self.tree.delete(*self.tree.get_children())
 
         matches = []
         for acct in self.accounts:
+            folder = self.get_share_folder(acct["username"])
             if query:
                 if (query in acct["username"].lower() or
-                        query in acct["link"].lower() or
-                        query in acct["password"].lower()):
-                    matches.append(acct)
+                        query in acct["password"].lower() or
+                        query in folder.lower() or
+                        query in acct["link"].lower()):
+                    matches.append((acct, folder))
             else:
-                matches.append(acct)
+                matches.append((acct, folder))
 
-        for acct in matches:
+        for acct, folder in matches:
             self.tree.insert("", tk.END, values=(
                 acct["username"],
                 acct["password"],
+                folder,
                 acct["link"],
                 acct["enabled"],
             ))
@@ -298,8 +374,11 @@ class HFSPasswordFinder:
             return
 
         values = self.tree.item(sel[0], "values")
-        username, password = values[0], values[1]
-        self.selected_label.config(text=f"{username}  /  {password}")
+        username, password, folder = values[0], values[1], values[2]
+        display = f"{username}  /  {password}"
+        if folder:
+            display += f"  /  {folder}"
+        self.selected_label.config(text=display)
         self.copy_btn.config(state=tk.NORMAL)
         self.change_btn.config(state=tk.NORMAL)
         self.copy_status.config(text="")
@@ -329,7 +408,6 @@ class HFSPasswordFinder:
         old_username = values[0]
         old_password = values[1]
 
-        # Find the account
         target = None
         for acct in self.accounts:
             if acct["username"] == old_username and acct["password"] == old_password:
@@ -371,11 +449,9 @@ class HFSPasswordFinder:
             with open(self.ini_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
-            # Update in-memory data
             target["password"] = new_pw
             target["raw_b64"] = new_b64
 
-            # Refresh display
             self.filter_accounts()
             self.new_pw_var.set("")
             self.selected_label.config(text=f"{old_username}  /  {new_pw}")

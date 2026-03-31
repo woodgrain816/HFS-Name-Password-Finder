@@ -1,5 +1,7 @@
 # Do not commit the actual HFS config - contains client credentials
 hfs.ini
+*.vfs
 *.bak
 __pycache__/
 *.pyc
+parse_vfs.py
