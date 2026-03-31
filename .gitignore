@@ -1,0 +1,5 @@
+# Do not commit the actual HFS config - contains client credentials
+hfs.ini
+*.bak
+__pycache__/
+*.pyc
