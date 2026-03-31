@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.HFSFinder" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">#1e1e2e</item>
+        <item name="android:statusBarColor">#1e1e2e</item>
+        <item name="android:navigationBarColor">#1e1e2e</item>
+        <item name="colorPrimary">#7c3aed</item>
+        <item name="colorPrimaryDark">#1e1e2e</item>
+        <item name="colorAccent">#7c3aed</item>
+    </style>
+</resources>
