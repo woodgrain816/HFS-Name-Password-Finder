@@ -83,6 +83,7 @@ class HFSPasswordFinder:
         self.ini_path = ""
         self.accounts = []
         self.folder_map = {}  # username -> share folder display name
+        self.selected_account = None  # currently selected account dict
 
         self.setup_styles()
         self.build_ui()
@@ -355,9 +356,10 @@ class HFSPasswordFinder:
                 matches.append((acct, folder))
 
         for acct, folder in matches:
+            masked_pw = "\u2022" * len(acct["password"])  # bullet ● per character
             self.tree.insert("", tk.END, values=(
                 acct["username"],
-                acct["password"],
+                masked_pw,
                 folder,
                 acct["link"],
                 acct["enabled"],
@@ -365,58 +367,58 @@ class HFSPasswordFinder:
 
         self.count_label.config(text=f"{len(matches)} of {len(self.accounts)} accounts")
 
+    def _find_account(self, username):
+        """Look up account dict by username."""
+        for acct in self.accounts:
+            if acct["username"] == username:
+                return acct
+        return None
+
     def on_select(self, event):
         sel = self.tree.selection()
         if not sel:
+            self.selected_account = None
             self.selected_label.config(text="None")
             self.copy_btn.config(state=tk.DISABLED)
             self.change_btn.config(state=tk.DISABLED)
             return
 
         values = self.tree.item(sel[0], "values")
-        username, password, folder = values[0], values[1], values[2]
-        display = f"{username}  /  {password}"
-        if folder:
-            display += f"  /  {folder}"
-        self.selected_label.config(text=display)
+        username, folder = values[0], values[2]
+        acct = self._find_account(username)
+        self.selected_account = acct
+
+        if acct:
+            password = acct["password"]
+            display = f"{username}  /  {password}"
+            if folder:
+                display += f"  /  {folder}"
+            self.selected_label.config(text=display)
+
         self.copy_btn.config(state=tk.NORMAL)
         self.change_btn.config(state=tk.NORMAL)
         self.copy_status.config(text="")
 
     def copy_credentials(self):
-        sel = self.tree.selection()
-        if not sel:
+        if not self.selected_account:
             return
-        values = self.tree.item(sel[0], "values")
-        username, password = values[0], values[1]
-        text = f"{username} {password}"
+        text = f"{self.selected_account['username']} {self.selected_account['password']}"
         self.root.clipboard_clear()
         self.root.clipboard_append(text)
         self.copy_status.config(text="Copied!")
         self.root.after(2000, lambda: self.copy_status.config(text=""))
 
     def change_password(self):
-        sel = self.tree.selection()
-        if not sel:
+        if not self.selected_account:
             return
         new_pw = self.new_pw_var.get().strip()
         if not new_pw:
             messagebox.showwarning("Empty Password", "Please enter a new password.")
             return
 
-        values = self.tree.item(sel[0], "values")
-        old_username = values[0]
-        old_password = values[1]
-
-        target = None
-        for acct in self.accounts:
-            if acct["username"] == old_username and acct["password"] == old_password:
-                target = acct
-                break
-
-        if not target:
-            messagebox.showerror("Error", "Could not find account in data.")
-            return
+        target = self.selected_account
+        old_username = target["username"]
+        old_password = target["password"]
 
         confirm = messagebox.askyesno(
             "Confirm Password Change",
@@ -454,7 +456,12 @@ class HFSPasswordFinder:
 
             self.filter_accounts()
             self.new_pw_var.set("")
-            self.selected_label.config(text=f"{old_username}  /  {new_pw}")
+            # Re-show the updated password in the panel
+            folder = self.get_share_folder(old_username)
+            display = f"{old_username}  /  {new_pw}"
+            if folder:
+                display += f"  /  {folder}"
+            self.selected_label.config(text=display)
             self.copy_status.config(text="Password changed!")
             self.root.after(3000, lambda: self.copy_status.config(text=""))
 
