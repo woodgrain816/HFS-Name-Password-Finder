@@ -233,10 +233,18 @@ def api_change_password():
 
     new_ini = ini_text.replace(old_token, new_token, 1)
 
+    # ── Auto-backup before writing ────────────────────────────────────────────
+    from datetime import datetime
+    backup_name = f"/HFS/hfs_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.ini"
+    try:
+        hfs_put(backup_name, ini_text.encode("utf-8"))
+    except Exception as e:
+        return jsonify({"error": f"Backup failed, aborting for safety: {e}"}), 500
+
     try:
         hfs_put(INI_PATH_HFS, new_ini.encode("utf-8"))
     except Exception as e:
-        return jsonify({"error": f"Upload failed: {e}"}), 500
+        return jsonify({"error": f"Upload failed (backup saved as {backup_name}): {e}"}), 500
 
     # Update cache
     target["password"] = new_pw

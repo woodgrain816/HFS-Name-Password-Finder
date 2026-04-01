@@ -94,8 +94,6 @@
   .sheet-divider  { height:1px; background:var(--border); margin:16px 0; }
   .sheet-label    { font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase;
                     letter-spacing:.5px; }
-  .new-pw-row     { display:flex; gap:8px; margin-bottom:12px; }
-  .new-pw-row input { flex:1; }
   .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
            background:#333; color:#fff; padding:10px 20px; border-radius:20px;
            font-size:14px; z-index:200; opacity:0; transition:opacity .3s;
@@ -155,14 +153,8 @@
     <button class="pw-toggle" id="pw-toggle-btn" onclick="togglePw()">Show</button>
   </div>
   <button class="btn" onclick="copyCredentials()">Copy Username &amp; Password</button>
-  <div class="sheet-divider"></div>
-  <div class="sheet-label">Change Password</div>
-  <div class="new-pw-row">
-    <input type="text" id="new-pw-input" placeholder="New password" autocomplete="off"
-           onkeydown="if(event.key==='Enter') changePassword()">
-    <button class="btn" style="width:auto;padding:14px 18px;" onclick="changePassword()">Save</button>
-  </div>
-  <button class="btn danger" onclick="closeSheet()">Cancel</button>
+  <div style="height:12px;"></div>
+  <button class="btn danger" onclick="closeSheet()">Close</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -332,32 +324,6 @@ function copyCredentials() {
   });
 }
 
-async function changePassword() {
-  const newPw = document.getElementById("new-pw-input").value.trim();
-  if (!newPw)        { toast("Enter a new password"); return; }
-  if (!currentAcct)  { return; }
-
-  try {
-    const resp = await apiFetch("/api/change_password", {
-      method: "POST",
-      body: JSON.stringify({username: currentAcct.username, new_password: newPw})
-    });
-    if (resp.error) throw new Error(resp.error);
-
-    // Update local data
-    const idx = allAccounts.findIndex(a => a.username === currentAcct.username);
-    if (idx >= 0) allAccounts[idx].password = newPw;
-    currentAcct.password = newPw;
-    pwRevealed = true;
-    document.getElementById("s-password").textContent = newPw;
-    document.getElementById("pw-toggle-btn").textContent = "Hide";
-    document.getElementById("new-pw-input").value = "";
-    toast("Password changed ✓");
-    filterList();
-  } catch(e) {
-    toast("Error: " + e.message);
-  }
-}
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 function esc(s) {
