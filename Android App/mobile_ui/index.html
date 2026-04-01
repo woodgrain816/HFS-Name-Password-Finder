@@ -3,348 +3,310 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1e1e2e">
-<title>HFS Password Finder</title>
-<link rel="manifest" href="/manifest.json">
+<title>HFS Finder</title>
 <style>
-  :root {
-    --bg:       #1e1e2e;
-    --surface:  #2a2a3d;
-    --surface2: #353550;
-    --accent:   #7c3aed;
-    --accent2:  #6d28d9;
-    --text:     #e2e8f0;
-    --muted:    #94a3b8;
-    --success:  #22c55e;
-    --danger:   #ef4444;
-    --border:   #3f3f5a;
-    --radius:   12px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", sans-serif;
-         min-height: 100vh; overflow-x: hidden; }
-
-  /* ── Login ── */
-  #login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center;
-                  min-height:100vh; padding:24px; gap:16px; }
-  .login-title { font-size:22px; font-weight:700; margin-bottom:8px; }
-  .login-sub   { color:var(--muted); font-size:13px; text-align:center; margin-bottom:8px; }
-  .field-label { width:100%; max-width:360px; font-size:12px; color:var(--muted); margin-bottom:4px; }
-  input[type=text], input[type=password], input[type=url] {
-    width:100%; max-width:360px; background:var(--surface); color:var(--text);
-    border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
-    font-size:16px; outline:none; transition:border-color .2s;
-  }
+  :root { --bg:#1e1e2e; --surface:#2a2a3d; --surface2:#353550; --accent:#7c3aed;
+          --accent2:#6d28d9; --text:#e2e8f0; --muted:#94a3b8; --success:#22c55e;
+          --danger:#ef4444; --border:#3f3f5a; --radius:12px; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,"Segoe UI",sans-serif;
+         min-height:100vh; }
+  /* Login */
+  #login { display:flex; flex-direction:column; align-items:center; justify-content:center;
+           min-height:100vh; padding:24px; gap:12px; }
+  .title { font-size:22px; font-weight:700; margin-bottom:4px; }
+  .sub   { color:var(--muted); font-size:13px; text-align:center; margin-bottom:8px; }
+  .lbl   { width:100%; max-width:360px; font-size:12px; color:var(--muted); margin-bottom:2px; }
+  input  { width:100%; max-width:360px; background:var(--surface); color:var(--text);
+           border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
+           font-size:16px; outline:none; }
   input:focus { border-color:var(--accent); }
-  .btn { width:100%; max-width:360px; background:var(--accent); color:#fff; border:none;
-         border-radius:var(--radius); padding:14px; font-size:16px; font-weight:700;
-         cursor:pointer; transition:background .2s; }
+  .btn   { width:100%; max-width:360px; background:var(--accent); color:#fff; border:none;
+           border-radius:var(--radius); padding:14px; font-size:16px; font-weight:700; cursor:pointer; }
   .btn:active { background:var(--accent2); }
   .btn.danger { background:var(--danger); }
-  .btn.danger:active { background:#dc2626; }
-  .btn.success { background:#059669; }
-  .error-msg { color:var(--danger); font-size:13px; text-align:center; }
-
-  /* ── Main App ── */
-  #app-screen { display:none; flex-direction:column; height:100vh; }
-
-  /* Header */
-  .header { background:var(--surface); padding:16px 16px 12px;
-            border-bottom:1px solid var(--border); flex-shrink:0; }
-  .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .header-title { font-size:18px; font-weight:700; }
-  .header-count { font-size:12px; color:var(--accent); font-weight:600; }
-  .search-box { display:flex; gap:8px; }
-  .search-input { flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border);
-                  border-radius:var(--radius); padding:10px 14px; font-size:15px; outline:none; }
-  .search-input:focus { border-color:var(--accent); }
-  .refresh-btn { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius);
-                 padding:10px 14px; color:var(--text); font-size:18px; cursor:pointer; }
-
+  .err   { color:var(--danger); font-size:13px; text-align:center; }
+  /* App */
+  #app { display:none; flex-direction:column; height:100vh; }
+  .hdr { background:var(--surface); padding:16px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .hdr-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .hdr-title { font-size:18px; font-weight:700; }
+  .hdr-count { font-size:12px; color:var(--accent); font-weight:600; }
+  .sbox { display:flex; gap:8px; }
+  .sinput { flex:1; background:var(--bg); color:var(--text); border:1px solid var(--border);
+            border-radius:var(--radius); padding:10px 14px; font-size:15px; outline:none; }
+  .sinput:focus { border-color:var(--accent); }
+  .rbtn { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius);
+          padding:10px 14px; color:var(--text); font-size:18px; cursor:pointer; }
   /* List */
-  #account-list { flex:1; overflow-y:auto; padding:8px 12px; }
-  .account-card { background:var(--surface); border-radius:var(--radius); padding:14px 16px;
-                  margin-bottom:8px; border:1px solid var(--border); cursor:pointer;
-                  transition:border-color .15s; active:border-color:var(--accent); }
-  .account-card:active { border-color:var(--accent); }
-  .card-username { font-size:16px; font-weight:700; margin-bottom:4px; }
-  .card-folder   { font-size:13px; color:var(--muted); }
-  .card-pw-dots  { font-size:13px; color:var(--border); letter-spacing:2px; margin-top:4px; }
-  .no-results    { text-align:center; color:var(--muted); padding:40px 20px; font-size:15px; }
-
-  /* ── Detail Sheet ── */
-  #detail-sheet { position:fixed; bottom:0; left:0; right:0; background:var(--surface);
-                  border-top:1px solid var(--border); border-radius:20px 20px 0 0;
-                  padding:20px 20px 40px; transform:translateY(100%);
-                  transition:transform .3s cubic-bezier(.4,0,.2,1); z-index:100;
-                  max-height:85vh; overflow-y:auto; }
-  #detail-sheet.open { transform:translateY(0); }
-  .sheet-handle { width:40px; height:4px; background:var(--border); border-radius:2px;
-                  margin:0 auto 20px; }
-  .sheet-username { font-size:22px; font-weight:700; margin-bottom:4px; }
-  .sheet-folder   { font-size:14px; color:var(--muted); margin-bottom:20px; }
-  .pw-reveal-row  { background:var(--bg); border-radius:var(--radius); padding:16px;
-                    margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
-  .pw-value       { font-size:18px; font-weight:600; font-family:monospace; letter-spacing:1px; }
-  .pw-toggle      { background:var(--surface2); border:none; border-radius:8px; padding:8px 14px;
-                    color:var(--text); font-size:13px; cursor:pointer; }
-  .sheet-divider  { height:1px; background:var(--border); margin:16px 0; }
-  .sheet-label    { font-size:12px; color:var(--muted); margin-bottom:8px; text-transform:uppercase;
-                    letter-spacing:.5px; }
+  #list { flex:1; overflow-y:auto; padding:8px 12px; }
+  .card { background:var(--surface); border-radius:var(--radius); padding:14px 16px;
+          margin-bottom:8px; border:1px solid var(--border); cursor:pointer; }
+  .card:active { border-color:var(--accent); }
+  .c-user { font-size:16px; font-weight:700; margin-bottom:4px; }
+  .c-folder { font-size:13px; color:var(--muted); }
+  .c-dots { font-size:13px; color:var(--border); letter-spacing:2px; margin-top:4px; }
+  .empty { text-align:center; color:var(--muted); padding:40px 20px; font-size:15px; }
+  /* Sheet */
+  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; display:none; }
+  .overlay.show { display:block; }
+  #sheet { position:fixed; bottom:0; left:0; right:0; background:var(--surface);
+           border-top:1px solid var(--border); border-radius:20px 20px 0 0;
+           padding:20px 20px 40px; transform:translateY(100%);
+           transition:transform .3s cubic-bezier(.4,0,.2,1); z-index:100; }
+  #sheet.open { transform:translateY(0); }
+  .handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 20px; }
+  .s-user { font-size:22px; font-weight:700; margin-bottom:4px; }
+  .s-folder { font-size:14px; color:var(--muted); margin-bottom:20px; }
+  .pw-row { background:var(--bg); border-radius:var(--radius); padding:16px;
+            margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
+  .pw-val { font-size:18px; font-weight:600; font-family:monospace; letter-spacing:1px; }
+  .pw-tog { background:var(--surface2); border:none; border-radius:8px; padding:8px 14px;
+            color:var(--text); font-size:13px; cursor:pointer; }
   .toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%);
            background:#333; color:#fff; padding:10px 20px; border-radius:20px;
-           font-size:14px; z-index:200; opacity:0; transition:opacity .3s;
-           white-space:nowrap; pointer-events:none; }
+           font-size:14px; z-index:200; opacity:0; transition:opacity .3s; pointer-events:none; }
   .toast.show { opacity:1; }
-  .overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99;
-             display:none; }
-  .overlay.show { display:block; }
   .loading { display:flex; align-items:center; justify-content:center; gap:10px;
              padding:40px; color:var(--muted); }
-  .spinner { width:20px; height:20px; border:2px solid var(--border);
-             border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  .spin { width:20px; height:20px; border:2px solid var(--border);
+          border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; }
+  @keyframes sp { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
 
-<!-- ── Login Screen ── -->
-<div id="login-screen">
-  <div class="login-title">🎵 HFS Password Finder</div>
-  <div class="login-sub">Enter your server URL and admin password</div>
-
-  <div class="field-label">Server URL</div>
-  <input type="url" id="server-url" placeholder="http://192.168.1.x:5001" autocomplete="off">
-
-  <div class="field-label">Password</div>
-  <input type="password" id="api-password" placeholder="Password" autocomplete="current-password">
-
-  <div id="login-error" class="error-msg"></div>
-  <button class="btn" onclick="doLogin()">Connect</button>
+<div id="login">
+  <div class="title">HFS Password Finder</div>
+  <div class="sub">Connects directly to your HFS file server</div>
+  <div class="lbl">HFS Server URL</div>
+  <input type="url" id="f-url" placeholder="http://ww2.wg816.com:82">
+  <div class="lbl">Username</div>
+  <input type="text" id="f-user" placeholder="wg">
+  <div class="lbl">Password</div>
+  <input type="password" id="f-pass" placeholder="Password">
+  <div id="f-err" class="err"></div>
+  <button class="btn" onclick="doConnect()">Connect</button>
 </div>
 
-<!-- ── Main App ── -->
-<div id="app-screen">
-  <div class="header">
-    <div class="header-top">
-      <div class="header-title">HFS Finder</div>
-      <div id="acct-count" class="header-count"></div>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title">HFS Finder</div>
+      <div id="count" class="hdr-count"></div>
     </div>
-    <div class="search-box">
-      <input type="search" id="search-input" class="search-input"
-             placeholder="Search name or folder…" oninput="filterList()">
-      <button class="refresh-btn" onclick="refreshData()" title="Refresh">↻</button>
+    <div class="sbox">
+      <input type="search" id="q" class="sinput" placeholder="Search name or folder..." oninput="doFilter()">
+      <button class="rbtn" onclick="doRefresh()">&#x21bb;</button>
     </div>
   </div>
-  <div id="account-list"></div>
+  <div id="list"></div>
 </div>
 
-<!-- ── Detail Sheet ── -->
-<div class="overlay" id="overlay" onclick="closeSheet()"></div>
-<div id="detail-sheet">
-  <div class="sheet-handle"></div>
-  <div class="sheet-username" id="s-username"></div>
-  <div class="sheet-folder"   id="s-folder"></div>
-  <div class="pw-reveal-row">
-    <div class="pw-value" id="s-password"></div>
-    <button class="pw-toggle" id="pw-toggle-btn" onclick="togglePw()">Show</button>
+<div class="overlay" id="ov" onclick="closeSheet()"></div>
+<div id="sheet">
+  <div class="handle"></div>
+  <div class="s-user" id="su"></div>
+  <div class="s-folder" id="sf"></div>
+  <div class="pw-row">
+    <div class="pw-val" id="sp"></div>
+    <button class="pw-tog" id="pt" onclick="togPw()">Show</button>
   </div>
-  <button class="btn" onclick="copyCredentials()">Copy Username &amp; Password</button>
-  <div style="height:12px;"></div>
+  <button class="btn" onclick="copyPw()">Copy Username &amp; Password</button>
+  <div style="height:12px"></div>
   <button class="btn danger" onclick="closeSheet()">Close</button>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ────────────────────────────────────────────────────────────────────
-let SERVER_URL = "";
-let API_PASS   = "";
-let allAccounts  = [];
-let currentAcct  = null;
-let pwRevealed   = false;
+var URL_="", USER_="", PASS_="";
+var allAccts=[], folderMap={}, cur=null, pwShown=false;
 
-// ── Persistence ──────────────────────────────────────────────────────────────
-function loadSaved() {
+/* ── Persistence via Android bridge ─────────────────────────────────────── */
+function loadPrefs() {
   try {
-    const s = JSON.parse(localStorage.getItem("hfs_cfg") || "{}");
-    if (s.url) document.getElementById("server-url").value = s.url;
-  } catch(e) {}
-}
-
-function saveCfg(url) {
-  const exp = new Date();
-  exp.setDate(exp.getDate() + 7);
-  document.cookie = `hfs_server=${encodeURIComponent(url)}; expires=${exp.toUTCString()}; path=/; SameSite=Lax`;
-  localStorage.setItem("hfs_cfg", JSON.stringify({url}));
-}
-
-function loadCookie() {
-  const m = document.cookie.match(/hfs_server=([^;]+)/);
-  if (m) return decodeURIComponent(m[1]);
-  return null;
-}
-
-// ── Login ─────────────────────────────────────────────────────────────────────
-async function doLogin() {
-  const url = document.getElementById("server-url").value.trim().replace(/\/$/, "");
-  const pw  = document.getElementById("api-password").value;
-  if (!url) { showLoginError("Enter server URL"); return; }
-  if (!pw)  { showLoginError("Enter password");   return; }
-
-  SERVER_URL = url;
-  API_PASS   = pw;
-  document.getElementById("login-error").textContent = "Connecting…";
-
-  try {
-    const resp = await apiFetch("/api/accounts");
-    if (resp.error) throw new Error(resp.error);
-    saveCfg(url);
-    allAccounts = resp.accounts;
-    showApp();
-    renderList(allAccounts);
-    document.getElementById("acct-count").textContent =
-      `${allAccounts.length} accounts`;
+    var u = Android.getPref("url","http://ww2.wg816.com:82");
+    var n = Android.getPref("user","wg");
+    if(u) document.getElementById("f-url").value = u;
+    if(n) document.getElementById("f-user").value = n;
   } catch(e) {
-    showLoginError("Connection failed: " + e.message);
+    document.getElementById("f-url").value = "http://ww2.wg816.com:82";
+    document.getElementById("f-user").value = "wg";
   }
 }
-
-function showLoginError(msg) {
-  document.getElementById("login-error").textContent = msg;
+function savePrefs() {
+  try { Android.setPref("url",URL_); Android.setPref("user",USER_); } catch(e){}
 }
 
-// ── API ───────────────────────────────────────────────────────────────────────
-async function apiFetch(path, opts = {}) {
-  const creds = btoa(`wg:${API_PASS}`);
-  const resp  = await fetch(SERVER_URL + path, {
-    ...opts,
-    headers: {
-      "Authorization": `Basic ${creds}`,
-      "Content-Type":  "application/json",
-      ...(opts.headers || {})
+/* ── Connect ────────────────────────────────────────────────────────────── */
+function doConnect() {
+  URL_  = document.getElementById("f-url").value.trim().replace(/\/$/,"");
+  USER_ = document.getElementById("f-user").value.trim();
+  PASS_ = document.getElementById("f-pass").value;
+  if(!URL_||!USER_||!PASS_){ showErr("Fill in all fields"); return; }
+  showErr("Connecting...");
+  setTimeout(function(){ doLoad(); }, 50);
+}
+function showErr(m){ document.getElementById("f-err").textContent=m; }
+
+function doLoad() {
+  try {
+    // 1. Fetch hfs.ini directly from HFS
+    var ini = Android.fetchText(URL_+"/HFS/hfs.ini", USER_, PASS_);
+    if(ini.indexOf("ERROR:")==0) throw ini;
+
+    // 2. Get folder map from newest .vfs
+    var vfsJson = Android.listVfsFiles(URL_+"/HFS/", USER_, PASS_);
+    var vfsList = JSON.parse(vfsJson);
+    if(vfsList.length > 0) {
+      var newest = vfsList[vfsList.length - 1];
+      var mapJson = Android.parseFolderMap(
+        URL_+"/HFS/"+encodeURIComponent(newest), USER_, PASS_);
+      folderMap = JSON.parse(mapJson);
     }
-  });
-  if (resp.status === 401) throw new Error("Wrong password");
-  return resp.json();
-}
 
-// ── App ───────────────────────────────────────────────────────────────────────
-function showApp() {
-  document.getElementById("login-screen").style.display = "none";
-  document.getElementById("app-screen").style.display   = "flex";
-}
+    // 3. Parse accounts
+    allAccts = parseAccounts(ini);
+    document.getElementById("count").textContent = allAccts.length + " accounts";
+    savePrefs();
 
-async function refreshData() {
-  document.getElementById("account-list").innerHTML =
-    '<div class="loading"><div class="spinner"></div> Refreshing…</div>';
-  try {
-    await apiFetch("/api/refresh", {method:"POST"});
-    const resp = await apiFetch("/api/accounts");
-    allAccounts = resp.accounts;
-    document.getElementById("acct-count").textContent =
-      `${allAccounts.length} accounts`;
-    filterList();
-    toast("Refreshed ✓");
+    // Show app
+    document.getElementById("login").style.display="none";
+    document.getElementById("app").style.display="flex";
+    doFilter();
   } catch(e) {
-    toast("Error: " + e.message);
-    renderList(allAccounts);
+    showErr("Failed: " + e);
   }
 }
 
-function filterList() {
-  const q = document.getElementById("search-input").value.trim().toLowerCase();
-  if (!q) { renderList(allAccounts); return; }
-  const filtered = allAccounts.filter(a =>
-    a.username.toLowerCase().includes(q) ||
-    a.folder.toLowerCase().includes(q)   ||
-    a.password.toLowerCase().includes(q)
-  );
-  renderList(filtered);
+function doRefresh() {
+  document.getElementById("list").innerHTML =
+    '<div class="loading"><div class="spin"></div> Refreshing...</div>';
+  setTimeout(function(){
+    try {
+      var ini = Android.fetchText(URL_+"/HFS/hfs.ini", USER_, PASS_);
+      if(ini.indexOf("ERROR:")!=0) {
+        allAccts = parseAccounts(ini);
+        document.getElementById("count").textContent = allAccts.length+" accounts";
+      }
+      doFilter();
+      toast("Refreshed");
+    } catch(e) { toast("Error: "+e); doFilter(); }
+  }, 50);
 }
 
-function renderList(accounts) {
-  const el = document.getElementById("account-list");
-  if (!accounts.length) {
-    el.innerHTML = '<div class="no-results">No accounts found</div>';
-    return;
+/* ── Parse accounts from ini text ───────────────────────────────────────── */
+function parseAccounts(text) {
+  var accts = [];
+  var lines = text.split("\n");
+  for(var i=0; i<lines.length; i++) {
+    var line = lines[i].replace(/^\s+|\s+$/g,"");
+    if(line.indexOf("accounts=")!=0) continue;
+    var data = line.substring(9);
+    var parts = data.split("|");
+    var c = {};
+    for(var p=0; p<parts.length; p++) {
+      var s = parts[p];
+      if(!s) continue;
+      if(s.indexOf("login:")==0) {
+        if(c.b64) accts.push(buildAcct(c));
+        c = {b64: s.substring(6)};
+      } else if(s.indexOf("enabled:")==0) c.enabled=s.substring(8);
+      else if(s.indexOf("group:")==0) c.group=s.substring(6);
+      else if(s.indexOf("link:")==0) c.link=s.substring(5).replace(/;$/,"");
+    }
+    if(c.b64) accts.push(buildAcct(c));
+    break;
   }
-  el.innerHTML = accounts.map(a => `
-    <div class="account-card" onclick="openSheet(${JSON.stringify(JSON.stringify(a))})">
-      <div class="card-username">${esc(a.username)}</div>
-      ${a.folder ? `<div class="card-folder">📁 ${esc(a.folder)}</div>` : ""}
-      <div class="card-pw-dots">${"•".repeat(a.password.length)}</div>
-    </div>
-  `).join("");
+  return accts;
 }
 
-// ── Detail Sheet ──────────────────────────────────────────────────────────────
-function openSheet(jsonStr) {
-  currentAcct = JSON.parse(jsonStr);
-  pwRevealed  = false;
-
-  document.getElementById("s-username").textContent  = currentAcct.username;
-  document.getElementById("s-folder").textContent    = currentAcct.folder ? "📁 " + currentAcct.folder : "";
-  document.getElementById("s-password").textContent  = "•".repeat(currentAcct.password.length);
-  document.getElementById("pw-toggle-btn").textContent = "Show";
-  document.getElementById("new-pw-input").value = "";
-
-  document.getElementById("detail-sheet").classList.add("open");
-  document.getElementById("overlay").classList.add("show");
+function buildAcct(r) {
+  var dec;
+  try { dec = atob(r.b64); } catch(e) { dec = r.b64; }
+  var idx = dec.indexOf(":");
+  var user = idx>=0 ? dec.substring(0,idx) : dec;
+  var pass = idx>=0 ? dec.substring(idx+1) : "";
+  var folders = folderMap[user.toLowerCase()] || [];
+  return { username:user, password:pass, folder:folders.join(" / "),
+           enabled:r.enabled||"", link:r.link||"" };
 }
 
+/* ── Display ────────────────────────────────────────────────────────────── */
+function doFilter() {
+  var q = document.getElementById("q").value.replace(/^\s+|\s+$/g,"").toLowerCase();
+  var list = allAccts;
+  if(q) {
+    list = [];
+    for(var i=0; i<allAccts.length; i++) {
+      var a = allAccts[i];
+      if(a.username.toLowerCase().indexOf(q)>=0 ||
+         a.folder.toLowerCase().indexOf(q)>=0 ||
+         a.password.toLowerCase().indexOf(q)>=0) list.push(a);
+    }
+  }
+  render(list);
+}
+
+function render(accts) {
+  var el = document.getElementById("list");
+  if(!accts.length){ el.innerHTML='<div class="empty">No accounts found</div>'; return; }
+  var h = "";
+  for(var i=0; i<accts.length; i++) {
+    var a = accts[i];
+    var dots = ""; for(var d=0;d<a.password.length;d++) dots+="\u2022";
+    h += '<div class="card" data-i="'+i+'" onclick="openSheet(\''+
+         esc2(a.username)+'\',\''+esc2(a.password)+'\',\''+esc2(a.folder)+'\')">'+
+         '<div class="c-user">'+esc(a.username)+'</div>'+
+         (a.folder?'<div class="c-folder">\uD83D\uDCC1 '+esc(a.folder)+'</div>':'')+
+         '<div class="c-dots">'+dots+'</div></div>';
+  }
+  el.innerHTML = h;
+}
+
+/* ── Detail sheet ───────────────────────────────────────────────────────── */
+function openSheet(user, pass, folder) {
+  cur = {u:user, p:pass, f:folder};
+  pwShown = false;
+  document.getElementById("su").textContent = user;
+  document.getElementById("sf").textContent = folder ? "\uD83D\uDCC1 "+folder : "";
+  var dots=""; for(var d=0;d<pass.length;d++) dots+="\u2022";
+  document.getElementById("sp").textContent = dots;
+  document.getElementById("pt").textContent = "Show";
+  document.getElementById("sheet").classList.add("open");
+  document.getElementById("ov").classList.add("show");
+}
 function closeSheet() {
-  document.getElementById("detail-sheet").classList.remove("open");
-  document.getElementById("overlay").classList.remove("show");
-  currentAcct = null;
+  document.getElementById("sheet").classList.remove("open");
+  document.getElementById("ov").classList.remove("show"); cur=null;
+}
+function togPw() {
+  pwShown=!pwShown;
+  var dots=""; if(!pwShown) for(var d=0;d<cur.p.length;d++) dots+="\u2022";
+  document.getElementById("sp").textContent = pwShown ? cur.p : dots;
+  document.getElementById("pt").textContent = pwShown ? "Hide" : "Show";
+}
+function copyPw() {
+  if(!cur) return;
+  var t = cur.u+" "+cur.p;
+  try {
+    navigator.clipboard.writeText(t).then(function(){toast("Copied!")});
+  } catch(e) {
+    var ta=document.createElement("textarea"); ta.value=t;
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
+    toast("Copied!");
+  }
 }
 
-function togglePw() {
-  pwRevealed = !pwRevealed;
-  document.getElementById("s-password").textContent =
-    pwRevealed ? currentAcct.password : "•".repeat(currentAcct.password.length);
-  document.getElementById("pw-toggle-btn").textContent = pwRevealed ? "Hide" : "Show";
-}
-
-function copyCredentials() {
-  if (!currentAcct) return;
-  const text = `${currentAcct.username} ${currentAcct.password}`;
-  navigator.clipboard.writeText(text).then(() => toast("Copied! ✓")).catch(() => {
-    // Fallback for Android WebView
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-    toast("Copied! ✓");
-  });
-}
-
-
-// ── Utils ─────────────────────────────────────────────────────────────────────
-function esc(s) {
-  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-}
-
-let toastTimer;
-function toast(msg) {
-  const el = document.getElementById("toast");
-  el.textContent = msg;
-  el.classList.add("show");
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2500);
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-window.onload = function() {
-  loadSaved();
-  const cookieUrl = loadCookie();
-  if (cookieUrl) document.getElementById("server-url").value = cookieUrl;
-};
+/* ── Util ───────────────────────────────────────────────────────────────── */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function esc2(s){ return s.replace(/\\/g,"\\\\").replace(/'/g,"\\'"); }
+var _tt;
+function toast(m){ var e=document.getElementById("toast"); e.textContent=m;
+  e.classList.add("show"); clearTimeout(_tt); _tt=setTimeout(function(){e.classList.remove("show");},2500); }
+window.onload = loadPrefs;
 </script>
 </body>
 </html>
